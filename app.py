@@ -5,6 +5,7 @@ Iniciar: streamlit run app.py
 from __future__ import annotations
 
 import html
+import hmac
 import os
 from collections import Counter, defaultdict
 from datetime import datetime
@@ -25,31 +26,54 @@ st.set_page_config(
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap');
+:root {
+  --fds-blue:#0047bb;
+  --fds-blue-dark:#0c1f52;
+  --fds-red:#d62828;
+  --fds-yellow:#f7c600;
+  --fds-green:#0f8b5f;
+  --fds-white:#ffffff;
+  --fds-ink:#1d2f49;
+}
 html, body, [class*="css"], [data-testid="stApp"] { font-family: 'DM Sans', sans-serif; }
-[data-testid="stApp"] { background: #f5f8fc; color: #1d2f49; }
-[data-testid="stSidebar"] { background: linear-gradient(175deg, #132b52, #0e4657); }
+[data-testid="stApp"] {
+  background: linear-gradient(180deg, #f7fbff 0%, #eef4ff 100%);
+  color: var(--fds-ink);
+}
+[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, var(--fds-blue-dark) 0%, var(--fds-blue) 88%);
+  border-right: 3px solid rgba(247,198,0,.55);
+}
 [data-testid="stSidebar"] * { color: #f7fcff !important; }
 [data-testid="stSidebar"] [data-baseweb="input"] input { color: #1d2f49 !important; }
 [data-testid="stSidebar"] [data-baseweb="input"] * { color: #1d2f49 !important; }
-h1, h2, h3 {font-family:'Outfit',sans-serif;letter-spacing:-.03em;color:#1a3454;}
+h1, h2, h3 {font-family:'Outfit',sans-serif;letter-spacing:-.03em;color:#143759;}
 h1 { font-weight: 800; }
-.fds-kicker { color:#087b83; font-size: .84rem; font-weight:800; letter-spacing:.14em; }
-.fds-hero {background:linear-gradient(110deg,#173964 0%,#0d6e7c 100%);border-radius:22px;
- padding:28px 31px 24px;color:white;margin:7px 0 23px;box-shadow:0 14px 30px #12385720;}
+.fds-kicker { color:var(--fds-red); font-size: .84rem; font-weight:800; letter-spacing:.14em; }
+.fds-hero {
+  background: linear-gradient(110deg, var(--fds-blue-dark) 0%, var(--fds-blue) 64%, var(--fds-red) 100%);
+  border-radius:22px; padding:28px 31px 24px; color:white; margin:7px 0 23px;
+  box-shadow:0 14px 30px rgba(12,31,82,.18); border: 1px solid rgba(247,198,0,.25);
+}
 .fds-hero h1 {color:white;margin:2px 0 6px;line-height:1.15;font-size:2.15rem;}
-.fds-hero p {color:#daedf2;margin:0;max-width:720px;font-size:1rem;}
-.fds-pill {display:inline-block;border-radius:22px;background:#ffffff28;color:white;padding:6px 11px;font-size:.73rem;font-weight:700;margin-bottom:12px;letter-spacing:.06em;}
-.fds-card {background:#fff; border:1px solid #e4eaf1;border-radius:16px;padding:18px 20px;margin:8px 0 13px;box-shadow:0 4px 18px #1b36500a;}
+.fds-hero p {color:#eef7ff;margin:0;max-width:720px;font-size:1rem;}
+.fds-pill {display:inline-block;border-radius:22px;background:var(--fds-yellow);color:var(--fds-blue-dark);padding:6px 11px;font-size:.73rem;font-weight:800;margin-bottom:12px;letter-spacing:.06em;}
+.fds-card {background:#fff; border:1px solid #dbe7f6;border-radius:16px;padding:18px 20px;margin:8px 0 13px;box-shadow:0 4px 18px rgba(20,55,89,.06);}
 .fds-card h4 { color:#143759;margin:0 0 9px;font-family:Outfit,sans-serif; }
 .fds-card p { color:#52627a;margin:0; }
-.fds-code {font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.96rem;font-weight:800;color:#0c777a;}
+.fds-code {font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.96rem;font-weight:800;color:var(--fds-blue);}
 .fds-muted {color:#64748b;font-size:.88rem;}
-.fds-dot {font-size:.79rem;background:#e6f5f2;border-radius:15px;padding:4px 9px;color:#076a65;font-weight:700;white-space:nowrap;}
-.fds-path {background:#eef7fc;padding:15px;border-radius:12px;color:#183956;font-weight:700;line-height:1.8;}
-[data-testid="stMetric"] {background:white;border:1px solid #e3eaf0;border-radius:15px;padding:16px 19px;box-shadow:0 4px 16px #2244660c;}
-.stButton > button[kind="primary"], [data-testid="stFormSubmitButton"] button[kind="primary"] {background:#087b83;color:white;border-color:#087b83;border-radius:9px;}
+.fds-dot {font-size:.79rem;background:#e8f8ef;border-radius:15px;padding:4px 9px;color:var(--fds-green);font-weight:700;white-space:nowrap;}
+.fds-path {background:#eef4ff;padding:15px;border-radius:12px;color:#183956;font-weight:700;line-height:1.8;border-left:4px solid var(--fds-yellow);}
+[data-testid="stMetric"] {background:white;border:1px solid #dbe7f6;border-radius:15px;padding:16px 19px;box-shadow:0 4px 16px rgba(34,68,102,.05);}
+[data-testid="stMetric"] label {color:#143759 !important;}
+.stButton > button[kind="primary"], [data-testid="stFormSubmitButton"] button[kind="primary"] {background:var(--fds-red);color:white;border-color:var(--fds-red);border-radius:10px;font-weight:700;}
+.stButton > button[kind="secondary"] {border-radius:10px;}
 [data-testid="stFileUploader"] {background:white;border-radius:10px;}
 hr {border-color:#e5edf2;}
+.fds-sidebar-brand {margin-top:-4px;margin-bottom:10px;}
+.fds-sidebar-brand h3 {color:#fff !important;margin:0;font-size:1.1rem;line-height:1.05;}
+.fds-sidebar-brand p {color:#e7f2ff !important;margin:4px 0 0;font-size:.82rem;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -70,6 +94,9 @@ def get_repository(url: str) -> Repository:
 DB_URL = settings_value("DATABASE_URL", "sqlite:///fds.db")
 PASSWORD = settings_value("FDS_PASSWORD")
 PUBLIC_APP_URL = settings_value("PUBLIC_APP_URL")
+BASE_DIR = os.path.dirname(__file__)
+LOGIN_SPLASH_PATH = os.path.join(BASE_DIR, "fds_login_cover.jpg")
+SIDEBAR_LOGO_PATH = os.path.join(BASE_DIR, "fds_sidebar_logo.jpg")
 
 
 def h(text: str) -> str:
@@ -494,25 +521,107 @@ SAMPLE_DOCS = [
 ]
 
 
+
+def require_login() -> None:
+    """Mostra uma tela de senha centralizada com a identidade visual do projeto."""
+    if not PASSWORD or st.session_state.get("authorized", False):
+        return
+
+    st.markdown("""
+    <style>
+    [data-testid="stSidebar"],
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="stSidebarNav"] {display:none !important;}
+    [data-testid="stMainBlockContainer"], .block-container {
+        max-width: 540px !important;
+        margin: 0 auto !important;
+        padding-top: clamp(28px, 7vh, 70px) !important;
+        padding-bottom: 35px !important;
+    }
+    .fds-login-image {
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 16px 36px rgba(12,31,82,.20);
+        border: 2px solid rgba(247,198,0,.45);
+        margin-bottom: 18px;
+    }
+    .fds-login-header {
+        text-align:center;
+        padding:22px 14px 18px;
+        background:linear-gradient(112deg,#0c1f52 0%, #0047bb 62%, #d62828 100%);
+        color:#fff;
+        border-radius:20px;
+        box-shadow:0 12px 26px rgba(12,31,82,.18);
+        margin-bottom: 17px;
+        border:1px solid rgba(247,198,0,.35);
+    }
+    .fds-login-header h1 {
+        color:#fff !important;
+        font-size:1.72rem;
+        font-weight:800;
+        margin:0 0 6px;
+    }
+    .fds-login-header p {color:#f5f9ff;margin:0;font-size:.96rem;}
+    [data-testid="stForm"] {
+        border:1px solid #e1eaf2 !important;
+        background:#fff;
+        box-shadow:0 9px 26px rgba(18,56,87,.08);
+        border-radius:18px;
+        padding:20px 22px;
+    }
+    @media (max-width: 640px) {
+        [data-testid="stMainBlockContainer"], .block-container {
+            padding-top: 4vh !important;
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+        }
+        .fds-login-header h1 {font-size:1.46rem;}
+        [data-testid="stForm"] {padding:17px 15px;}
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    if os.path.exists(LOGIN_SPLASH_PATH):
+        st.markdown('<div class="fds-login-image">', unsafe_allow_html=True)
+        st.image(LOGIN_SPLASH_PATH, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="fds-login-header">
+        <h1>FIND DOC SCHOOL</h1>
+        <p>Acesso protegido · Digite a senha para continuar</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    with st.form("fds_login_form"):
+        attempt = st.text_input("Senha de acesso", type="password", placeholder="Digite sua senha")
+        submitted = st.form_submit_button("🔓 Entrar no sistema", type="primary", use_container_width=True)
+
+    if submitted:
+        if hmac.compare_digest(attempt, PASSWORD):
+            st.session_state["authorized"] = True
+            st.rerun()
+        else:
+            st.error("Senha incorreta. Tente novamente.")
+    st.caption("Acesso exclusivo à equipe autorizada. Não compartilhe a senha.")
+    st.stop()
+
+
 def main() -> None:
+    # A autenticação vem ANTES da barra lateral e das páginas.
+    require_login()
     with st.sidebar:
-        st.markdown("### 🗂️ FIND DOC SCHOOL")
-        st.caption("Sistema inteligente de arquivos · FDS")
+        brand_left, brand_right = st.columns([1, 1.8], vertical_alignment="center")
+        with brand_left:
+            if os.path.exists(SIDEBAR_LOGO_PATH):
+                st.image(SIDEBAR_LOGO_PATH, use_container_width=True)
+            else:
+                st.markdown("## 🗂️")
+        with brand_right:
+            st.markdown("<div class='fds-sidebar-brand'><h3>FIND DOC SCHOOL</h3><p>Sistema inteligente de arquivos · FDS</p></div>", unsafe_allow_html=True)
         st.divider()
         if PASSWORD:
-            if not st.session_state.get("authorized", False):
-                st.markdown("**🔐 Acesso restrito**")
-                with st.form("login_form"):
-                    password_attempt = st.text_input("Senha da equipe", type="password")
-                    sent = st.form_submit_button("Entrar", use_container_width=True)
-                if sent:
-                    import hmac
-                    if hmac.compare_digest(password_attempt, PASSWORD):
-                        st.session_state["authorized"] = True
-                        st.rerun()
-                    else:
-                        st.error("Senha incorreta.")
-                st.stop()
+            st.caption("🔒 Acesso protegido")
             if st.button("🚪 Sair da conta", use_container_width=True):
                 st.session_state["authorized"] = False
                 st.rerun()
